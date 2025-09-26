@@ -1,6 +1,11 @@
 # Ally additions
 compile_commands.json
 .cache
+clang
+gcc
+.DS_Store
+*/__pycache__
+
 
 # Prerequisites
 *.d
