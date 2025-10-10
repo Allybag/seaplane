@@ -22,10 +22,31 @@ enum class DataType
     String
 };
 
+inline auto format_as(DataType aType)
+{
+    switch (aType)
+    {
+    case seaplane::DataType::None:
+        return "None";
+    case seaplane::DataType::Integer:
+        return "Integer";
+    case seaplane::DataType::Bool:
+        return "Bool";
+    case seaplane::DataType::Real:
+        return "Real";
+    case seaplane::DataType::String:
+        return "String";
+    }
+
+    throw FlushingError{"Invalid Variant type"};
+}
+
 template<typename T> concept Enum = std::is_enum_v<T>;
 
 struct Variant
 {
+    Variant() {}
+
     Variant(std::integral auto aIntegral) : integral{static_cast<std::int64_t>(aIntegral)}, type{DataType::Integer}
     {
         if constexpr (std::is_same_v<decltype(aIntegral), bool>)
@@ -85,7 +106,7 @@ struct Variant
 
         if (type != DataType::None && type != aOther.type)
         {
-            throw FlushingError{"Cannot assign Variant of different type"};
+            throw FlushingError{std::format("Cannot assign Variant of type {} to {}", format_as(type), format_as(aOther.type))};
         }
 
         if (type == DataType::String)
@@ -122,7 +143,7 @@ struct Variant
 
         if (type != DataType::None && type != aOther.type)
         {
-            throw FlushingError{"Cannot assign Variant of different type"};
+            throw FlushingError{std::format("Cannot assign Variant of type {} to {}", format_as(type), format_as(aOther.type))};
         }
 
         if (type == DataType::String)
@@ -151,6 +172,11 @@ struct Variant
             case DataType::String:
                 return *this;
         }
+    }
+
+    DataType data_type() const
+    {
+        return type;
     }
 
     template <typename T>
