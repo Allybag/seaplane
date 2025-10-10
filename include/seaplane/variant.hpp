@@ -10,8 +10,6 @@
 #include <type_traits>
 #include <utility>
 
-template<typename T> concept Enum = std::is_enum_v<T>;
-
 namespace seaplane
 {
 
@@ -24,9 +22,10 @@ enum class DataType
     String
 };
 
+template<typename T> concept Enum = std::is_enum_v<T>;
+
 struct Variant
 {
-
     Variant(std::integral auto aIntegral) : integral{static_cast<std::int64_t>(aIntegral)}, type{DataType::Integer}
     {
         if constexpr (std::is_same_v<decltype(aIntegral), bool>)
@@ -78,6 +77,41 @@ struct Variant
             case DataType::None:
                 return;
         }
+    }
+
+    template <typename T>
+    T as() const
+    {
+        if constexpr (std::is_same_v<T, bool>)
+        {
+            if (type == DataType::Bool)
+            {
+                return static_cast<bool>(integral);
+            }
+        }
+        else if constexpr (std::integral<T>)
+        {
+            if (type == DataType::Integer)
+            {
+                return integral;
+            }
+        }
+        else if constexpr (std::is_same_v<T, double> || std::is_same_v<T, float>)
+        {
+            if (type == DataType::Real)
+            {
+                return real;
+            }
+        }
+        else if constexpr (std::is_same_v<T, std::string>)
+        {
+            if (type == DataType::String)
+            {
+                return text;
+            }
+        }
+
+        throw FlushingError{"Wrong type for seaplane::Variant"};
     }
 
     ~Variant()
