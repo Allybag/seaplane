@@ -45,7 +45,7 @@ struct Variant
         switch (aOther.type)
         {
             case DataType::String:
-                text = aOther.text;
+                emplace_text(aOther.text);
                 return;
             case DataType::Integer:
             case DataType::Bool:
@@ -65,7 +65,7 @@ struct Variant
         switch (aOther.type)
         {
             case DataType::String:
-                text = std::move(aOther.text);
+                emplace_text(std::move(aOther.text));
                 return;
             case DataType::Integer:
             case DataType::Bool:
@@ -76,6 +76,80 @@ struct Variant
                 return;
             case DataType::None:
                 return;
+        }
+    }
+
+    Variant& operator=(const Variant& aOther)
+    {
+        if (this == &aOther) return *this;
+
+        if (type != DataType::None && type != aOther.type)
+        {
+            throw FlushingError{"Cannot assign Variant of different type"};
+        }
+
+        if (type == DataType::String)
+        {
+            text = aOther.text;
+            return *this;
+        }
+        else if (type == DataType::None && aOther.type == DataType::String)
+        {
+            type = DataType::String;
+            emplace_text(aOther.text);
+            return *this;
+        }
+
+        type = aOther.type;
+        switch (type)
+        {
+            case DataType::Integer:
+            case DataType::Bool:
+                integral = aOther.integral;
+                return *this;
+            case DataType::Real:
+                real = aOther.real;
+                return *this;
+            case DataType::None:
+            case DataType::String:
+                return *this;
+        }
+    }
+
+    Variant& operator=(Variant&& aOther)
+    {
+        if (this == &aOther) return *this;
+
+        if (type != DataType::None && type != aOther.type)
+        {
+            throw FlushingError{"Cannot assign Variant of different type"};
+        }
+
+        if (type == DataType::String)
+        {
+            text = std::move(aOther.text);
+            return *this;
+        }
+        else if (type == DataType::None && aOther.type == DataType::String)
+        {
+            type = DataType::String;
+            emplace_text(std::move(aOther.text));
+            return *this;
+        }
+
+        type = aOther.type;
+        switch (type)
+        {
+            case DataType::Integer:
+            case DataType::Bool:
+                integral = aOther.integral;
+                return *this;
+            case DataType::Real:
+                real = aOther.real;
+                return *this;
+            case DataType::None:
+            case DataType::String:
+                return *this;
         }
     }
 
@@ -111,7 +185,7 @@ struct Variant
             }
         }
 
-        throw FlushingError{"Wrong type for seaplane::Variant"};
+        throw FlushingError{std::format("Wrong type for seaplane::Variant containing {}", format())};
     }
 
     ~Variant()
@@ -128,6 +202,36 @@ struct Variant
             case DataType::Real:
                 return;
         }
+    }
+
+    std::string format() const
+    {
+        switch (type)
+        {
+        case seaplane::DataType::None:
+            return std::format("");
+        case seaplane::DataType::Integer:
+            return std::format("{}", integral);
+        case seaplane::DataType::Bool:
+            return std::format("{}", static_cast<bool>(integral));
+        case seaplane::DataType::Real:
+            return std::format("{}", real);
+        case seaplane::DataType::String:
+            return std::format("{}", text);
+        }
+
+        throw FlushingError{"Invalid Variant type"};
+    }
+
+private:
+    void emplace_text(const std::string& aText)
+    {
+        new (&text) std::string(aText);
+    }
+
+    void emplace_text(std::string&& aText)
+    {
+        new (&text) std::string(std::move(aText));
     }
 
     union
@@ -152,20 +256,6 @@ struct std::formatter<seaplane::Variant>
 
     auto format(const seaplane::Variant& aVariant, std::format_context& aContext) const
     {
-        switch (aVariant.type)
-        {
-        case seaplane::DataType::None:
-            return std::format_to(aContext.out(), "");
-        case seaplane::DataType::Integer:
-            return std::format_to(aContext.out(), "{}", aVariant.integral);
-        case seaplane::DataType::Bool:
-            return std::format_to(aContext.out(), "{}", static_cast<bool>(aVariant.integral));
-        case seaplane::DataType::Real:
-            return std::format_to(aContext.out(), "{}", aVariant.real);
-        case seaplane::DataType::String:
-            return std::format_to(aContext.out(), "{}", aVariant.text);
-        }
-
-        throw FlushingError{"Invalid Variant type"};
+        return std::format_to(aContext.out(), "{}", aVariant.format());
     }
 };
