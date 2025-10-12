@@ -214,6 +214,12 @@ struct Variant
         throw FlushingError{std::format("Wrong type for seaplane::Variant containing {}", format())};
     }
 
+    operator bool() const { return as<bool>(); }
+    operator int() const { return as<int>(); }
+    operator std::int64_t() const { return as<std::int64_t>(); }
+    operator double() const { return as<double>(); }
+    operator std::string() const { return as<std::string>(); }
+
     ~Variant()
     {
         switch (type)
