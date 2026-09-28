@@ -4,6 +4,7 @@
 
 #include <concepts>
 #include <cstddef>
+#include <cstdint>
 #include <format>
 #include <string>
 #include <string_view>
@@ -106,7 +107,7 @@ struct Variant
 
         if (type != DataType::None && type != aOther.type)
         {
-            throw FlushingError{std::format("Cannot assign Variant of type {} to {}", format_as(type), format_as(aOther.type))};
+            throw FlushingError{std::format("Cannot assign Variant of type {} to {}", format_as(aOther.type), format_as(type))};
         }
 
         if (type == DataType::String)
@@ -143,7 +144,7 @@ struct Variant
 
         if (type != DataType::None && type != aOther.type)
         {
-            throw FlushingError{std::format("Cannot assign Variant of type {} to {}", format_as(type), format_as(aOther.type))};
+            throw FlushingError{std::format("Cannot assign Variant of type {} to {}", format_as(aOther.type), format_as(type))};
         }
 
         if (type == DataType::String)

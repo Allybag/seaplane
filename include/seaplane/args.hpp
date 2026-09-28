@@ -4,6 +4,9 @@
 #include <seaplane/variant.hpp>
 
 #include <charconv>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
 #include <format>
 #include <print>
 #include <string>
@@ -17,16 +20,22 @@ using OptionMap = std::unordered_map<std::string, Variant>;
 inline OptionMap parse_args(const OptionMap& default_options, int argc, const char* argv[])
 {
     std::println("{}: parsing arguments", argv[0]);
+    const auto count = static_cast<std::size_t>(argc);
     std::size_t index = 1;
 
     auto options = default_options;
-    while (index < argc)
+    while (index < count)
     {
         auto current_option = std::string(argv[index]);
 
         while (!current_option.empty() && current_option.front() == ' ')
         {
              current_option = current_option.substr(1);
+        }
+
+        if (current_option.empty())
+        {
+            throw FlushingError{std::format("Argument {} is empty", index)};
         }
 
         if (current_option.front() != '-' && current_option.front() != '+')
@@ -49,7 +58,17 @@ inline OptionMap parse_args(const OptionMap& default_options, int argc, const ch
             continue;
         }
 
+        if (current_option.front() == '+')
+        {
+            throw FlushingError{std::format("Only boolean options can be disabled with '+': {}", current_option)};
+        }
+
         index++;
+        if (index >= count)
+        {
+            throw FlushingError{std::format("Missing value for option: {}", current_option)};
+        }
+
         auto value = std::string(argv[index]);
         switch (type)
         {
@@ -73,7 +92,7 @@ inline OptionMap parse_args(const OptionMap& default_options, int argc, const ch
             {
                 char* end;
                 auto result = std::strtod(value.data(), &end);
-                if (end != value.data() + value.size())
+                if (value.empty() || end != value.data() + value.size())
                 {
                     throw FlushingError{std::format("Failed to parse {} as real number", value)};
                 }
